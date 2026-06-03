@@ -1,0 +1,12 @@
+from rest_framework import serializers
+from .models import Transaction
+
+
+class TransactionSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.display_name', read_only=True)
+    type_display = serializers.CharField(source='get_type_display', read_only=True)
+
+    class Meta:
+        model = Transaction
+        fields = ['id', 'user', 'username', 'order', 'amount', 'type',
+                  'type_display', 'description', 'created_at']

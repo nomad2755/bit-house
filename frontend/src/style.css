@@ -1,0 +1,29 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: #333;
+  background: #f5f5f5;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* Element Plus admin sidebar override */
+.admin-sidebar .el-menu {
+  border-right: none;
+  background: #304156;
+}
+.admin-sidebar .el-menu-item {
+  color: #bfcbd9;
+}
+.admin-sidebar .el-menu-item:hover,
+.admin-sidebar .el-menu-item.is-active {
+  color: #fff;
+  background: #263445;
+}
