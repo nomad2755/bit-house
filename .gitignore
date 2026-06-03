@@ -18,6 +18,9 @@ staticfiles/
 media/
 db.sqlite3
 
+# 测试数据
+backend/apps/houses/management/commands/seed.py
+
 # Node
 node_modules/
 frontend/dist/
