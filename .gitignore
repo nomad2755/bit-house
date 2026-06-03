@@ -18,8 +18,13 @@ staticfiles/
 media/
 db.sqlite3
 
-# 测试数据
+# 测试数据 & 爬虫脚本
 backend/apps/houses/management/commands/seed.py
+scripts/
+*.json
+!package.json
+!package-lock.json
+!tsconfig*.json
 
 # Node
 node_modules/
