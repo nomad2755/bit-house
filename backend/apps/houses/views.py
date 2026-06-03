@@ -30,6 +30,7 @@ class HouseFilter(FilterSet):
     district = NumberFilter(field_name='district_id')
     district__in = CharFilter(method='filter_district_in')
     area = NumberFilter(field_name='area_ref_id')
+    community = CharFilter(field_name='community')
     category = NumberFilter(field_name='category_id')
     status = NumberFilter(field_name='status')
     search = CharFilter(method='filter_search')

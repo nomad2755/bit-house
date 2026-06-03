@@ -56,6 +56,8 @@
           <el-card style="margin-top:16px">
             <h3>房东信息</h3>
             <p>{{ house.owner_name }}</p>
+            <p v-if="house.owner_phone" class="phone">📞 {{ house.owner_phone }}</p>
+            <p v-else class="sub"><router-link to="/login">登录后查看联系方式</router-link></p>
             <p class="sub">浏览 {{ house.view_count }} 次</p>
           </el-card>
         </el-col>
@@ -117,4 +119,5 @@ function handleContract() {
 .carousel-img { width: 100%; height: 400px; object-fit: cover; }
 .price { color: #ff5500; font-size: 24px; font-weight: bold; }
 .sub { color: #999; font-size: 12px; margin-top: 8px; }
+.phone { color: #409eff; font-size: 16px; font-weight: bold; margin-top: 8px; }
 </style>

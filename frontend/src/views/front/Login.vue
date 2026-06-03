@@ -1,5 +1,8 @@
 <template>
   <div class="login-page">
+    <router-link to="/" class="back-home">
+      <el-icon><HomeFilled /></el-icon> 返回首页
+    </router-link>
     <el-card class="login-card">
       <h2>登录 Bit House</h2>
       <el-form :model="form" @submit.prevent="handleLogin">
@@ -45,7 +48,9 @@ async function handleLogin() {
 </script>
 
 <style scoped>
-.login-page { display: flex; justify-content: center; align-items: center; min-height: 80vh; }
+.login-page { display: flex; justify-content: center; align-items: center; min-height: 80vh; position: relative; }
+.back-home { position: absolute; top: 20px; left: 20px; font-size: 14px; color: #409eff; text-decoration: none; display: flex; align-items: center; gap: 4px; }
+.back-home:hover { text-decoration: underline; }
 .login-card { width: 400px; }
 h2 { text-align: center; margin-bottom: 24px; }
 .register-link { text-align: center; margin-top: 16px; font-size: 14px; }

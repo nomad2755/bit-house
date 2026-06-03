@@ -98,12 +98,19 @@ class HouseDetailSerializer(serializers.ModelSerializer):
     area_name = serializers.CharField(source='area_ref.name', read_only=True, default='')
     owner_name = serializers.CharField(source='owner.display_name', read_only=True)
     owner_avatar = serializers.ImageField(source='owner.avatar', read_only=True)
+    owner_phone = serializers.SerializerMethodField()
     images = HouseImageSerializer(many=True, read_only=True)
     is_favorited = serializers.SerializerMethodField()
 
     class Meta:
         model = House
         fields = '__all__'
+
+    def get_owner_phone(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.owner.phone or ''
+        return ''
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')

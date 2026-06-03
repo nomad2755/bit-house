@@ -7,6 +7,7 @@ Django + Vue 3 前后端分离的房屋租赁平台，支持管理员、房东�
 - **后端**: Django 5.x + Django REST Framework + SimpleJWT + SQLite
 - **前端**: Vue 3 + Vite + Element Plus + Pinia + Vue Router
 - **端口**: 后端 8000, 前端 3000 (Vite proxy → 8000)
+- **仓库**: https://github.com/nomad2755/bit-house
 
 ## 目录结构
 ```
@@ -48,7 +49,7 @@ cd backend && python manage.py runserver 0.0.0.0:8000
 # 前端
 cd frontend && npx vite --port 3000
 
-# 初始化种子数据
+# 初始化种子数据 (seed.py 本地维护，不推送到远端)
 cd backend && python manage.py seed
 ```
 
@@ -62,10 +63,9 @@ cd backend && python manage.py seed
 | 租客2 | tenant2 | 123456 |
 
 ## 核心数据模型
-- **User**: 自定义用户, 字段含 role/phone/id_card/display_name
-- **House**: 房源, 关联 owner/category/district/area_ref, 字典字段: orientation/decoration/pay_type/lease_term/facilities
-- **District**: 区域, 关联 City → Province
-- **Area**: 商圈, 关联 District
+- **User**: 自定义用户, 字段含 role/phone/id_card/display_name, phone 字段 unique=True
+- **House**: 房源, 关联 owner/category/district/area_ref, 字典字段: orientation/decoration/pay_type/lease_term/facilities/community
+- **Province → City → District → Area**: 四级地理层级
 - **Dictionary**: 平台字典, group 分组 (orientation/decoration/pay_type/lease_term/facility/community)
 - **Contract**: 合同, 关联 house/landlord/tenant
 - **RentPayment**: 租金账单
@@ -79,20 +79,20 @@ POST /api/auth/refresh/        # 刷新 token
 GET/PUT /api/auth/profile/     # 个人信息
 
 # 房源
-GET  /api/houses/              # 房源列表 (支持 search/district/district__in/category/price 等筛选)
-GET  /api/houses/{id}/         # 房源详情
+GET  /api/houses/              # 房源列表 (支持 search/district/district__in/community/category/price 等筛选)
+GET  /api/houses/{id}/         # 房源详情 (含 owner_phone, 登录可见)
 POST /api/houses/create/       # 发布房源 (房东)
-PUT  /api/houses/{id}/update/  # 编辑房源 (房东/管理员)
+PUT/PATCH /api/houses/{id}/update/  # 编辑房源 (房东/管理员)
 DELETE /api/houses/{id}/delete/ # 删除房源
 GET  /api/houses/my/           # 房东自己的房源
 POST /api/houses/{id}/images/upload/  # 上传图片
 DELETE /api/houses/images/{id}/delete/ # 删除图片
 
 # 字典
-GET  /api/houses/dicts/?group=xxx       # 按分组查询字典
-GET  /api/houses/dicts/?group=community&area=xx  # 按商圈查小区名
-POST /api/houses/dicts/manage/          # 新增字典项 (管理员)
-PUT/DELETE /api/houses/dicts/{id}/      # 编辑/删除字典项
+GET  /api/houses/dicts/?group=xxx                # 按分组查询字典
+GET  /api/houses/dicts/?group=community&area=xx   # 按商圈查小区名
+POST /api/houses/dicts/manage/                    # 新增字典项 (管理员)
+PUT/DELETE /api/houses/dicts/{id}/                # 编辑/删除字典项
 
 # 地理
 GET /api/houses/provinces/     # 省份列表 (含城市)
@@ -117,6 +117,7 @@ GET /api/houses/latest/            # 最新房源
 - Dictionary 模型统一管理所有下拉选项 (朝向/装修/付款/租期/配套设施/小区名)
 - 小区名关联 Area (商圈)，支持按商圈筛选
 - 管理员通过 `/admin/dicts` 页面配置，前端表单/筛选动态加载
+- 小区数据从 58.com 抓取，通过小区详情页的 `regionName` 字段关联商圈 (189 个小区，35 个商圈)
 
 ### 城市选择
 - location store 持久化到 localStorage，全局共享
@@ -124,26 +125,21 @@ GET /api/houses/latest/            # 最新房源
 - HouseList 首次进入需选择城市才加载数据
 - `district__in` 过滤器支持传入多个区域 ID
 
+### 房源列表筛选
+- 级联筛选: 城市 → 区域 → 商圈 → 小区 (字典数据)
+- 搜索框支持标题/小区名/地址/描述搜索 (从首页跳转自动回填)
+- 未选城市时显示引导提示，不加载数据
+
 ### 房东房源管理
 - 独立编辑页面 (`/owner/houses/:id/edit`)，非弹窗
-- 支持图片上传/删除
+- 支持图片上传/删除 (后端 API: `/houses/{id}/images/upload/`, `/houses/images/{id}/delete/`)
 - 小区名级联选择: 区域 → 商圈 → 小区名 (字典)
 - 上下架使用 PATCH 部分更新
 
-## 已完成的改动记录
-- 修复请求拦截器对登录接口不附加失效 token
-- 统一 AUTH_URLS 路径格式 (去掉 /api 前缀)
-- 登录 401 统一显示 "用户名或密码错误"
-- 注册增加用户名/手机号/身份证号唯一性校验
-- 手机号格式校验 (大陆/香港/澳门)
-- 登录支持手机号/身份证号 (filter().first 防重复)
-- phone 字段加 unique=True 约束
-- 移除 balance (余额) 字段显示
-- 移除 is_vr (VR) 功能
-- 新增字典管理系统 (Dictionary 模型 + 管理页面)
-- 新增 Province/City 模型，支持省份-城市-区域级联
-- 首部增加城市位置选择器 (默认武汉)
-- 房源列表搜索框 (从首页跳转自动回填)
-- 房东独立房源编辑页面 (含图片上传)
-- 导航链接精确匹配 (router-link-exact-active)
-- 首页链接移除冗余注册按钮
+### 房源详情页
+- 房东手机号仅登录用户可见 (未登录显示"登录后查看联系方式")
+- 登录页左上角有"返回首页"按钮
+
+## Git 提交规范
+- `seed.py` 在 `.gitignore` 中，不推送到远端
+- 提交前需用户确认，不擅自推送

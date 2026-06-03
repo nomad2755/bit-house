@@ -32,8 +32,19 @@
       <div class="filter-row" v-if="currentAreas.length">
         <span class="filter-label">商圈：</span>
         <div class="filter-options">
-          <el-tag :type="!filters.area ? '' : 'info'" @click="filters.area=undefined">不限</el-tag>
-          <el-tag v-for="a in currentAreas" :key="a.id" :type="filters.area===a.id ? '' : 'info'" @click="filters.area=a.id">{{ a.name }}</el-tag>
+          <el-tag :type="!filters.area ? '' : 'info'" @click="filters.area=undefined;filters.community=undefined;communityOptions=[]">不限</el-tag>
+          <el-tag v-for="a in currentAreas" :key="a.id" :type="filters.area===a.id ? '' : 'info'" @click="selectArea(a)">{{ a.name }}</el-tag>
+        </div>
+      </div>
+      <!-- 小区筛选（选商圈后显示） -->
+      <div class="filter-row">
+        <span class="filter-label">小区：</span>
+        <div class="filter-options">
+          <template v-if="filters.area && communityOptions.length">
+            <el-tag :type="!filters.community ? '' : 'info'" @click="filters.community=undefined">不限</el-tag>
+            <el-tag v-for="c in communityOptions" :key="c.id" :type="filters.community===c.value ? '' : 'info'" @click="filters.community=c.value">{{ c.label }}</el-tag>
+          </template>
+          <span v-else class="no-data">-</span>
         </div>
       </div>
       <!-- 方式 -->
@@ -144,13 +155,14 @@ const page = ref(1)
 const ordering = ref('')
 const priceRange = ref('')
 const searchText = ref(route.query.search as string || '')
+const communityOptions = ref<any[]>([])
 
 // 从 location store 读取选中的城市
 const selectedProvince = computed(() => locationStore.selectedProvince)
 const selectedCity = computed(() => locationStore.selectedCity)
 
 const filters = reactive<any>({
-  district: undefined, area: undefined, category: undefined,
+  district: undefined, area: undefined, community: undefined, category: undefined,
   room_count: undefined, orientation: undefined, decoration: undefined,
   has_subway: false, has_elevator: false,
   min_price: undefined, max_price: undefined,
@@ -189,6 +201,16 @@ function onSearch() {
 function selectDistrict(d: any) {
   filters.district = d.id
   filters.area = undefined
+  filters.community = undefined
+  communityOptions.value = []
+}
+
+async function selectArea(a: any) {
+  filters.area = a.id
+  filters.community = undefined
+  // 从字典加载该商圈的小区名
+  const res = await api.get('/houses/dicts/', { params: { group: 'community', area: a.id } })
+  communityOptions.value = res.data
 }
 
 function setPrice(p: any) { priceRange.value = p.label; filters.min_price = p.min; filters.max_price = p.max }
@@ -207,6 +229,7 @@ async function fetchHouses() {
     if (districtIds.length) params.district__in = districtIds.join(',')
   }
   if (filters.area) params.area = filters.area
+  if (filters.community) params.community = filters.community
   if (filters.category) params.category = filters.category
   if (filters.room_count) params.room_count = filters.room_count
   if (filters.orientation) params.orientation = filters.orientation
@@ -269,6 +292,7 @@ watch(() => locationStore.selectedCity, (newCity) => {
 .filter-label { width: 50px; font-size: 14px; color: #666; line-height: 32px; flex-shrink: 0; }
 .filter-options { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .filter-options .el-tag { cursor: pointer; }
+.no-data { color: #ccc; font-size: 14px; line-height: 32px; }
 .sort-bar { margin-bottom: 16px; }
 .house-card { cursor: pointer; margin-bottom: 20px; }
 .house-card:hover { transform: translateY(-2px); transition: 0.3s; }
